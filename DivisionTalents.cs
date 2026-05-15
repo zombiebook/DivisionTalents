@@ -184,6 +184,7 @@ namespace DivisionTalents
             // 방어형 - 파랑 계열
             _talentColors["stable"] = new Color(0.55f, 0.75f, 1f);
             _talentColors["perpetuation"] = new Color(0.4f, 0.55f, 0.95f);
+            _talentColors["quickstep"] = new Color(0.3f, 0.9f, 0.9f);
 
             // 유틸리티 - 초록/노랑 계열
             _talentColors["actum_est"] = new Color(1f, 0.85f, 0.2f); // 노란색 (전기 느낌)
@@ -416,6 +417,17 @@ namespace DivisionTalents
                 Duration = 3f,
                 Cooldown = 0f,
                 Stats = { { "damage_bonus", 0.25f } }
+            });
+
+            AddTalent(new WeaponTalent
+            {
+                Id = "quickstep",
+                Name = "Quickstep",
+                Description = "이동 속도 +20% (항상 적용)",
+                Type = TalentType.Defensive,
+                IsPassive = true,
+                IsActive = true,
+                Stats = { { "move_speed_bonus", 0.20f } }
             });
 
             // ▶ 유틸리티 추가
@@ -761,6 +773,12 @@ namespace DivisionTalents
                     // Stable: 반동 제어 +30%
                     StatBoostManager.ApplyCharacterBoost(characterItem, "RecoilControl", talent.Stats["recoil_bonus"]);
                 }
+                else if (talent.Id == "quickstep" && characterItem != null)
+                {
+                    // Quickstep: 이동 속도 +20%
+                    StatBoostManager.ApplyWeaponBoost(characterItem, "WalkSpeed", talent.Stats["move_speed_bonus"]);
+                    StatBoostManager.ApplyWeaponBoost(characterItem, "RunSpeed", talent.Stats["move_speed_bonus"]);
+                }
                 else if (talent.Id == "extra")
                 {
                     // Extra: 탄창 용량 +50%
@@ -808,6 +826,8 @@ namespace DivisionTalents
                 {
                     StatBoostManager.RemoveCharacterBoost(characterItem, "ReloadSpeedGain");
                     StatBoostManager.RemoveCharacterBoost(characterItem, "RecoilControl");
+                    StatBoostManager.RemoveWeaponBoost(characterItem, "WalkSpeed");
+                    StatBoostManager.RemoveWeaponBoost(characterItem, "RunSpeed");
                 }
             }
             catch { }
