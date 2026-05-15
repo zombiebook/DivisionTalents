@@ -1305,8 +1305,14 @@ namespace DivisionTalents
                 _septicStacks[victimId]++;
                 _septicTimers[victimId] = now;
 
+                // 1중첩: 맹독 적용
+                if (_septicStacks[victimId] == 1)
+                {
+                    ApplyPoisonToEnemy(victimHealth);
+                    Debug.Log($"[DivisionTalents] ★ Septic Shock 1중첩: 맹독! ★");
+                }
                 // 3중첩: 스턴 (전기 쇼크로 감전/경직)
-                if (_septicStacks[victimId] == 3)
+                else if (_septicStacks[victimId] == 3)
                 {
                     ApplyElectricShockToEnemy(victimHealth);
                     Debug.Log($"[DivisionTalents] ★ Septic Shock 3중첩: 스턴! ★");
@@ -1400,6 +1406,75 @@ namespace DivisionTalents
             {
                 if (_debugMode)
                     Debug.LogWarning($"[DivisionTalents] ApplyElectricShockToEnemy error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 적에게 맹독 적용 (독 무기 TypeID 899의 buff 사용)
+        /// </summary>
+        private void ApplyPoisonToEnemy(Health victimHealth)
+        {
+            try
+            {
+                if (victimHealth == null) return;
+
+                var victimGO = victimHealth.gameObject;
+                if (victimGO == null) return;
+
+                var components = victimGO.GetComponents<Component>();
+                object? buffManager = null;
+                object? character = null;
+
+                foreach (var comp in components)
+                {
+                    if (comp == null) continue;
+                    var typeName = comp.GetType().Name;
+                    if (typeName == "CharacterMainControl" || typeName == "Character")
+                    {
+                        character = comp;
+                        var bmField = comp.GetType().GetField("buffManager",
+                            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (bmField != null)
+                            buffManager = bmField.GetValue(comp);
+                        break;
+                    }
+                }
+
+                if (buffManager == null || character == null) return;
+
+                var buffField = typeof(ItemSetting_Gun).GetField("buff",
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (buffField == null) return;
+
+                // 독 무기 (TypeID 899) 인스턴스화해서 buff 추출
+                Item? poisonWeapon = ItemAssetsCollection.InstantiateSync(899);
+                if (poisonWeapon == null) return;
+
+                var gunSetting = poisonWeapon.GetComponent<ItemSetting_Gun>();
+                if (gunSetting == null)
+                {
+                    UnityEngine.Object.Destroy(poisonWeapon.gameObject);
+                    return;
+                }
+
+                var poisonBuff = buffField.GetValue(gunSetting);
+                UnityEngine.Object.Destroy(poisonWeapon.gameObject);
+
+                if (poisonBuff == null) return;
+
+                var addBuffMethod = buffManager.GetType().GetMethod("AddBuff",
+                    BindingFlags.Public | BindingFlags.Instance);
+                if (addBuffMethod != null)
+                {
+                    addBuffMethod.Invoke(buffManager, new object[] { poisonBuff, character, -1 });
+                    if (_debugMode)
+                        Debug.Log($"[DivisionTalents] Poison applied to enemy!");
+                }
+            }
+            catch (Exception ex)
+            {
+                if (_debugMode)
+                    Debug.LogWarning($"[DivisionTalents] ApplyPoisonToEnemy error: {ex.Message}");
             }
         }
 
@@ -1585,8 +1660,30 @@ namespace DivisionTalents
                 else
                 {
                     subText = "PASSIVE";
-                    extraInfo = "Hold RMB";
+                    extraInfo = L("우클릭 조준", "Hold RMB", "右クリック");
                 }
+            }
+            else if (talent.Id == "septic_shock")
+            {
+                // Septic Shock: 현재 가장 높은 스택 표시
+                shouldShow = true;
+                int highestStack = 0;
+                foreach (var kvp in _septicStacks)
+                {
+                    if (kvp.Value > highestStack) highestStack = kvp.Value;
+                }
+                int maxStacks = (int)talent.Stats["max_stacks"];
+                subText = $"{highestStack}/{maxStacks}";
+                if (highestStack >= maxStacks)
+                    extraInfo = "+20% DMG";
+                else if (highestStack >= 6)
+                    extraInfo = "SHOCK";
+                else if (highestStack >= 3)
+                    extraInfo = "STUN";
+                else if (highestStack >= 1)
+                    extraInfo = "POISON";
+                else
+                    extraInfo = L("명중 시 중첩", "Hit to stack", "命中で重複");
             }
 
             if (!shouldShow) return;
