@@ -351,7 +351,7 @@ namespace DivisionTalents
             {
                 Id = "boomerang",
                 Name = "Boomerang",
-                Description = "크리티컬 시 다음 사격 +50% 데미지 (5초)",
+                Description = "크리티컬 시 탄환 1발 복구 + 5초간 +50% 데미지",
                 Type = TalentType.Offensive,
                 IsPassive = false,
                 Duration = 5f,
@@ -911,15 +911,48 @@ namespace DivisionTalents
 
             float now = Time.time;
 
-            // Boomerang: 크리티컬 시 다음 사격 데미지 부스트
+            // Boomerang: 크리티컬 시 다음 사격 데미지 부스트 + 탄환 1발 복구
             if (_equippedTalentId == "boomerang")
             {
                 var bTalent = GetTalent("boomerang");
                 if (bTalent != null)
                 {
                     bTalent.Activate(now);
+
+                    // 탄환 1발 복구 (CapacityHash stat +1)
+                    try
+                    {
+                        var player = CharacterMainControl.Main;
+                        if (player != null)
+                        {
+                            var allGuns = StatBoostManager.GetAllInventoryGuns(player);
+                            foreach (var weapon in allGuns)
+                            {
+                                if (weapon == null) continue;
+                                var gun = weapon.GetComponent<ItemSetting_Gun>();
+                                if (gun == null) continue;
+
+                                // _bulletCountCache 직접 +1
+                                var cacheField = typeof(ItemSetting_Gun).GetField("_bulletCountCache",
+                                    BindingFlags.NonPublic | BindingFlags.Instance);
+                                if (cacheField != null)
+                                {
+                                    int current = (int)cacheField.GetValue(gun);
+                                    if (current >= 0)
+                                    {
+                                        cacheField.SetValue(gun, current + 1);
+                                        if (_debugMode)
+                                            Debug.Log($"[DivisionTalents] Boomerang: 탄환 복구 {current}→{current + 1}");
+                                        break; // 활성 무기 하나만
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+
                     if (_debugMode)
-                        Debug.Log($"[DivisionTalents] ★ Boomerang 발동! 5초간 +50% 데미지 ★");
+                        Debug.Log($"[DivisionTalents] ★ Boomerang 발동! 5초간 +50% 데미지 + 탄환 1발 복구 ★");
                 }
                 return;
             }
