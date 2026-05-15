@@ -121,6 +121,10 @@ namespace DivisionTalents
         private bool _actumEstChargeReady = false; // 100스택 도달, 다음 재장전 대기
         private bool _actumEstActive = false;       // 다음 탄창 사용 중 (재장전 후 활성)
 
+        // Septic Shock: 적별 중첩 추적 (Health 인스턴스 ID → 스택/타이머)
+        private Dictionary<int, int> _septicStacks = new Dictionary<int, int>();
+        private Dictionary<int, float> _septicTimers = new Dictionary<int, float>();
+
         // 버프 아이콘 텍스처
         private Texture2D? _bgTexture;
         private Texture2D? _activeBgTexture;
@@ -185,6 +189,7 @@ namespace DivisionTalents
             _talentColors["stable"] = new Color(0.55f, 0.75f, 1f);
             _talentColors["perpetuation"] = new Color(0.4f, 0.55f, 0.95f);
             _talentColors["quickstep"] = new Color(0.3f, 0.9f, 0.9f);
+            _talentColors["septic_shock"] = new Color(0.6f, 0.9f, 0.2f); // 독 느낌
 
             // 유틸리티 - 초록/노랑 계열
             _talentColors["actum_est"] = new Color(1f, 0.85f, 0.2f); // 노란색 (전기 느낌)
@@ -417,6 +422,17 @@ namespace DivisionTalents
                 Duration = 3f,
                 Cooldown = 0f,
                 Stats = { { "damage_bonus", 0.25f } }
+            });
+
+            AddTalent(new WeaponTalent
+            {
+                Id = "septic_shock",
+                Name = "Septic Shock",
+                Description = "같은 적 명중 시 10초간 맹독 중첩. 7중첩 시 +20% 데미지",
+                Type = TalentType.Defensive,
+                IsPassive = true,
+                IsActive = true,
+                Stats = { { "max_stacks", 7f }, { "damage_bonus_at_max", 0.20f }, { "duration", 10f } }
             });
 
             AddTalent(new WeaponTalent
@@ -1242,6 +1258,159 @@ namespace DivisionTalents
                         Debug.Log($"[DivisionTalents] ★ Outsider Edge 발동! 4초간 +25% 데미지 (헤드샷) ★");
                     break;
             }
+        }
+
+        /// <summary>
+        /// Septic Shock: 적별 스택 관리
+        /// </summary>
+        public void OnEnemyHitForSeptic(Health victimHealth)
+        {
+            if (_equippedTalentId != "septic_shock") return;
+            if (victimHealth == null) return;
+
+            var talent = GetTalent("septic_shock");
+            if (talent == null) return;
+
+            int victimId = victimHealth.GetInstanceID();
+            float now = Time.time;
+            int maxStacks = (int)talent.Stats["max_stacks"];
+            float duration = talent.Stats["duration"];
+
+            // 타이머 만료 체크
+            if (_septicTimers.TryGetValue(victimId, out float lastTime))
+            {
+                if (now - lastTime > duration)
+                {
+                    _septicStacks[victimId] = 0; // 10초 지나면 리셋
+                }
+            }
+
+            // 스택 증가 (최대 7)
+            if (!_septicStacks.ContainsKey(victimId))
+                _septicStacks[victimId] = 0;
+
+            if (_septicStacks[victimId] < maxStacks)
+            {
+                _septicStacks[victimId]++;
+                _septicTimers[victimId] = now;
+
+                // 3중첩: 스턴 (전기 쇼크로 감전/경직)
+                if (_septicStacks[victimId] == 3)
+                {
+                    ApplyElectricShockToEnemy(victimHealth);
+                    Debug.Log($"[DivisionTalents] ★ Septic Shock 3중첩: 스턴! ★");
+                }
+                // 6중첩: 강한 전기 쇼크
+                else if (_septicStacks[victimId] == 6)
+                {
+                    ApplyElectricShockToEnemy(victimHealth);
+                    Debug.Log($"[DivisionTalents] ★ Septic Shock 6중첩: 전기 쇼크! ★");
+                }
+
+                if (_debugMode)
+                    Debug.Log($"[DivisionTalents] Septic Shock: 중첩 {_septicStacks[victimId]}/{maxStacks}");
+            }
+        }
+
+        /// <summary>
+        /// 적에게 전기 쇼크 적용 (전기 무기의 buff를 적에게 부여)
+        /// </summary>
+        private void ApplyElectricShockToEnemy(Health victimHealth)
+        {
+            try
+            {
+                if (victimHealth == null) return;
+
+                // 전기 참조 로드 (ElectricAmmoApplier가 이미 로드했을 수 있음)
+                ElectricAmmoApplier.LoadReferences();
+
+                // 적의 GameObject에서 buffManager 찾기
+                var victimGO = victimHealth.gameObject;
+                if (victimGO == null) return;
+
+                // 적의 CharacterMainControl 또는 Character 컴포넌트에서 buffManager 찾기
+                var components = victimGO.GetComponents<Component>();
+                object? buffManager = null;
+                object? character = null;
+
+                foreach (var comp in components)
+                {
+                    if (comp == null) continue;
+                    var typeName = comp.GetType().Name;
+                    if (typeName == "CharacterMainControl" || typeName == "Character")
+                    {
+                        character = comp;
+                        // buffManager 필드 찾기
+                        var bmField = comp.GetType().GetField("buffManager",
+                            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (bmField != null)
+                        {
+                            buffManager = bmField.GetValue(comp);
+                        }
+                        break;
+                    }
+                }
+
+                if (buffManager == null || character == null) return;
+
+                // 전기 buff 프리팹 가져오기 (ItemSetting_Gun의 buff 필드에서)
+                var buffField = typeof(ItemSetting_Gun).GetField("buff",
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                if (buffField == null) return;
+
+                // 전기 무기에서 buff 추출 (ElectricAmmoApplier가 이미 로드한 참조 사용)
+                // 간단하게: 전기 무기 인스턴스화해서 buff 가져오기
+                Item? electricWeapon = ItemAssetsCollection.InstantiateSync(733); // 전기 무기
+                if (electricWeapon == null) return;
+
+                var gunSetting = electricWeapon.GetComponent<ItemSetting_Gun>();
+                if (gunSetting == null)
+                {
+                    UnityEngine.Object.Destroy(electricWeapon.gameObject);
+                    return;
+                }
+
+                var electricBuff = buffField.GetValue(gunSetting);
+                UnityEngine.Object.Destroy(electricWeapon.gameObject);
+
+                if (electricBuff == null) return;
+
+                // AddBuff 호출
+                var addBuffMethod = buffManager.GetType().GetMethod("AddBuff",
+                    BindingFlags.Public | BindingFlags.Instance);
+                if (addBuffMethod != null)
+                {
+                    addBuffMethod.Invoke(buffManager, new object[] { electricBuff, character, -1 });
+                    if (_debugMode)
+                        Debug.Log($"[DivisionTalents] Electric shock applied to enemy!");
+                }
+            }
+            catch (Exception ex)
+            {
+                if (_debugMode)
+                    Debug.LogWarning($"[DivisionTalents] ApplyElectricShockToEnemy error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Septic Shock: 현재 적에 대한 데미지 보너스 반환
+        /// </summary>
+        public float GetSepticDamageBonus(Health victimHealth)
+        {
+            if (_equippedTalentId != "septic_shock") return 0f;
+            if (victimHealth == null) return 0f;
+
+            var talent = GetTalent("septic_shock");
+            if (talent == null) return 0f;
+
+            int victimId = victimHealth.GetInstanceID();
+            int maxStacks = (int)talent.Stats["max_stacks"];
+
+            if (!_septicStacks.TryGetValue(victimId, out int stacks)) return 0f;
+            if (stacks < maxStacks) return 0f; // 7스택 미만이면 보너스 없음
+
+            // 7스택 도달 시 +20% 데미지
+            return talent.Stats["damage_bonus_at_max"];
         }
     }
 }
@@ -2138,6 +2307,9 @@ namespace DivisionTalents
                 // 적 명중 감지 (Actum Est용)
                 TalentManager.Instance.OnEnemyHit();
 
+                // Septic Shock: 적별 스택 관리 + 데미지 부스트
+                TalentManager.Instance.OnEnemyHitForSeptic(__instance);
+
                 // 거리 계산 (damagePoint 사용)
                 float distance = 0f;
                 if (_damagePointField != null)
@@ -2158,6 +2330,13 @@ namespace DivisionTalents
 
                 // 데미지 보너스 계산
                 float multiplier = TalentManager.Instance.GetDamageMultiplier(distance, ammoRatio);
+
+                // Septic Shock: 7스택 도달 시 +20% 추가
+                float septicBonus = TalentManager.Instance.GetSepticDamageBonus(__instance);
+                if (septicBonus > 0)
+                {
+                    multiplier *= (1f + septicBonus);
+                }
 
                 // Vindictive: 활성화 중이면 critRate 부스트 적용
                 ApplyCritRateBoost(damageInfo);
