@@ -33,7 +33,7 @@ namespace DivisionTalents
                 _talentManager = go.AddComponent<TalentManager>();
                 Debug.Log("[DivisionTalents] TalentManager created");
 
-                // Harmony 패치 적용 (Duckov-totem과 동일한 방식)
+                // Harmony 패치 적용
                 _harmony = new Harmony("com.divisiontalents.mod");
                 _harmony.PatchAll();
 
@@ -120,13 +120,6 @@ namespace DivisionTalents
         private int _actumEstStacks = 0;
         private bool _actumEstChargeReady = false; // 100스택 도달, 다음 재장전 대기
         private bool _actumEstActive = false;       // 다음 탄창 사용 중 (재장전 후 활성)
-
-        // Electromagnetic Accelerator: 트리거 차징 시간 추적
-        private float _emaChargeStartTime = 0f;     // 마우스 좌클릭 시작 시간
-        private bool _emaIsCharging = false;
-        private float _emaLastChargePercent = 0f;   // 마지막 발사 시 사용한 차징 %
-        private bool _emaHoldingTrigger = false;    // 트리거 누르고 있는 중 (게임 발사 막기 위해)
-        private bool _emaManualFire = false;        // 우리가 강제 발사 중 (Prefix가 통과시키도록)
 
         // 버프 아이콘 텍스처
         private Texture2D? _bgTexture;
@@ -343,11 +336,11 @@ namespace DivisionTalents
             {
                 Id = "electromagnetic_accelerator",
                 Name = "Electromagnetic Accelerator",
-                Description = "트리거를 오래 누를수록 데미지 증가 (0~100%)",
+                Description = "조준(우클릭) 중 +50% 데미지",
                 Type = TalentType.Utility,
                 IsPassive = true,
                 IsActive = true,
-                Stats = { { "max_charge_time", 1.5f } } // 1.5초에 100% 충전
+                Stats = { { "damage_bonus", 0.5f } }
             });
 
             // === Division 2 추가 탤런트 ===
@@ -599,36 +592,6 @@ namespace DivisionTalents
                 _fastHandsStacks = 0;
                 if (_debugMode)
                     Debug.Log("[DivisionTalents] Fast Hands 스택 초기화");
-            }
-
-            // Electromagnetic Accelerator: 트리거 차징 추적
-            if (_equippedTalentId == "electromagnetic_accelerator")
-            {
-                // 좌클릭 누르기 시작
-                if (Input.GetMouseButtonDown(0))
-                {
-                    _emaChargeStartTime = currentTime;
-                    _emaIsCharging = true;
-                    _emaHoldingTrigger = true;
-                }
-                // 좌클릭 떼면 → 발사!
-                else if (Input.GetMouseButtonUp(0) && _emaHoldingTrigger)
-                {
-                    float chargeTime = currentTime - _emaChargeStartTime;
-                    float maxTime = GetTalent("electromagnetic_accelerator")?.Stats["max_charge_time"] ?? 1.5f;
-                    _emaLastChargePercent = Mathf.Clamp01(chargeTime / maxTime);
-
-                    _emaHoldingTrigger = false;
-                    _emaIsCharging = false;
-
-                    // 트리거 떼는 순간 강제로 한 발 발사
-                    FireEMAShot();
-                }
-            }
-            else
-            {
-                _emaIsCharging = false;
-                _emaHoldingTrigger = false;
             }
 
             // 단축키
@@ -1157,11 +1120,11 @@ namespace DivisionTalents
 
                 case "electromagnetic_accelerator":
                     {
-                        // 트리거 릴리스 시 사용된 차징 % 만큼 데미지 부스트
-                        // FireEMAShot에서 _emaLastChargePercent를 설정해두었음
-                        // 0% 차징 → 1.0 (기본)
-                        // 100% 차징 → 2.0 (2배)
-                        multiplier *= (1f + _emaLastChargePercent);
+                        // 우클릭 조준 중일 때만 데미지 부스트
+                        if (Input.GetMouseButton(1))
+                        {
+                            multiplier *= (1f + talent.Stats["damage_bonus"]);
+                        }
                     }
                     break;
             }
@@ -1175,99 +1138,6 @@ namespace DivisionTalents
         public int GetActumEstStacks() => _actumEstStacks;
         public bool IsActumEstChargeReady() => _actumEstChargeReady;
         public bool IsActumEstActive() => _actumEstActive;
-
-        // EMA getters (UseABullet 패치에서 사용)
-        public bool IsEMAHoldingTrigger() => _emaHoldingTrigger;
-        public bool IsEMAManualFire() => _emaManualFire;
-
-        /// <summary>
-        /// EMA 트리거 릴리스 시 호출 - 무기의 UseABullet을 강제 호출하여 한 발 발사
-        /// </summary>
-        private void FireEMAShot()
-        {
-            try
-            {
-                var player = CharacterMainControl.Main;
-                if (player == null) return;
-
-                // 활성 무기 가져오기
-                var gun = GetActiveGun(player);
-                if (gun == null)
-                {
-                    if (_debugMode)
-                        Debug.LogWarning("[DivisionTalents] EMA: no active gun");
-                    return;
-                }
-
-                // UseABullet 메서드 호출
-                var method = typeof(ItemSetting_Gun).GetMethod("UseABullet",
-                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-
-                if (method == null)
-                {
-                    Debug.LogWarning("[DivisionTalents] EMA: UseABullet method not found");
-                    return;
-                }
-
-                // 강제 발사 플래그 ON (Prefix가 차징 체크 통과시키도록)
-                _emaManualFire = true;
-                try
-                {
-                    var ps = method.GetParameters();
-                    object[] args = new object[ps.Length];
-                    // 파라미터는 모두 default - 게임이 알아서 처리
-                    method.Invoke(gun, args);
-
-                    if (_debugMode)
-                        Debug.Log($"[DivisionTalents] ★ EMA 발사! 차징 {_emaLastChargePercent * 100:F0}% (x{1f + _emaLastChargePercent:F2}) ★");
-                }
-                finally
-                {
-                    _emaManualFire = false;
-                }
-            }
-            catch (Exception ex)
-            {
-                _emaManualFire = false;
-                Debug.LogWarning($"[DivisionTalents] FireEMAShot error: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 현재 활성 무기의 ItemSetting_Gun 가져오기 (agentHolder.CurrentHoldGun.Item.GetComponent)
-        /// </summary>
-        private ItemSetting_Gun? GetActiveGun(CharacterMainControl player)
-        {
-            try
-            {
-                var bf = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-                var holderField = player.GetType().GetField("agentHolder", bf);
-                if (holderField == null) return null;
-
-                var holder = holderField.GetValue(player);
-                if (holder == null) return null;
-
-                var ht = holder.GetType();
-                var holdGunMember = (MemberInfo?)ht.GetProperty("CurrentHoldGun", bf)
-                                  ?? (MemberInfo?)ht.GetField("CurrentHoldGun", bf);
-                if (holdGunMember == null) return null;
-
-                object? gunObj = null;
-                if (holdGunMember is FieldInfo gf) gunObj = gf.GetValue(holder);
-                else if (holdGunMember is PropertyInfo gp) gunObj = gp.GetValue(holder);
-                if (gunObj == null) return null;
-
-                // gunObj.Item.GetComponent<ItemSetting_Gun>()
-                var itemProp = gunObj.GetType().GetProperty("Item", bf) ?? gunObj.GetType().GetProperty("item", bf);
-                if (itemProp == null) return null;
-
-                var item = itemProp.GetValue(gunObj) as Item;
-                if (item == null) return null;
-
-                return item.GetComponent<ItemSetting_Gun>();
-            }
-            catch { return null; }
-        }
 
         /// <summary>
         /// 적 명중 시 호출 (Actum Est 스택 누적용)
@@ -1472,20 +1342,17 @@ namespace DivisionTalents
             }
             else if (talent.Id == "electromagnetic_accelerator")
             {
-                // EMA는 패시브이지만 차징 중일 때 더 화려하게
+                // EMA는 패시브: 우클릭 조준 중에만 활성 표시
                 shouldShow = true;
-                if (_emaIsCharging)
+                if (Input.GetMouseButton(1))
                 {
-                    float chargeTime = currentTime - _emaChargeStartTime;
-                    float maxTime = talent.Stats["max_charge_time"];
-                    float pct = Mathf.Clamp01(chargeTime / maxTime);
-                    subText = $"{pct * 100:F0}%";
-                    extraInfo = $"x{1f + pct:F2}";
+                    subText = "ACTIVE";
+                    extraInfo = "+50% DMG";
                 }
                 else
                 {
-                    subText = "READY";
-                    extraInfo = "Hold LMB";
+                    subText = "PASSIVE";
+                    extraInfo = "Hold RMB";
                 }
             }
 
@@ -1545,25 +1412,11 @@ namespace DivisionTalents
                 GUI.DrawTexture(new Rect(boxX - 4, boxY - 4, boxWidth + 8, boxHeight + 8), _glowTexture);
                 GUI.color = Color.white;
             }
-            // EMA 글로우 - 차징 중일 때 푸른색 강도 증가
-            else if (talent.Id == "electromagnetic_accelerator" && _emaIsCharging)
+            // EMA 글로우 - 우클릭 조준 중일 때 푸른색
+            else if (talent.Id == "electromagnetic_accelerator" && Input.GetMouseButton(1))
             {
-                float chargeTime = Time.time - _emaChargeStartTime;
-                float maxTime = talent.Stats["max_charge_time"];
-                float pct = Mathf.Clamp01(chargeTime / maxTime);
-
-                // 푸른색 → 100%에서 강한 흰빛 펄스
-                Color glowColor;
-                if (pct >= 1f)
-                {
-                    float pulse = 0.7f + Mathf.Sin(Time.time * 12f) * 0.3f;
-                    glowColor = new Color(0.8f, 0.95f, 1f, pulse);
-                }
-                else
-                {
-                    glowColor = Color.Lerp(new Color(0.3f, 0.5f, 0.9f, 0.3f),
-                                          new Color(0.6f, 0.85f, 1f, 0.95f), pct);
-                }
+                float pulse = 0.6f + Mathf.Sin(Time.time * 8f) * 0.3f;
+                Color glowColor = new Color(0.6f, 0.85f, 1f, pulse);
 
                 if (_glowTexture == null) _glowTexture = MakeTex(1, 1, Color.white);
                 GUI.color = glowColor;
@@ -3399,55 +3252,43 @@ namespace DivisionTalents
 
     /// <summary>
     /// ItemSetting_Gun.UseABullet Prefix 패치
-    /// - Actum Est가 활성화되어 있으면 매 발사마다 전기 속성 보장
-    /// - EMA가 차징 중일 때는 자동 발사 차단 (트리거 릴리스 시에만 발사)
+    /// Actum Est가 활성화되어 있으면 매 발사마다 전기 속성 보장
     /// </summary>
-    [HarmonyPatch(typeof(ItemSetting_Gun), "UseABullet")]
+    [HarmonyPatch]
     public static class ItemSetting_Gun_UseABullet_Patch
     {
+        [HarmonyTargetMethods]
+        static IEnumerable<MethodBase> TargetMethods()
+        {
+            var methods = typeof(ItemSetting_Gun).GetMethods(
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+
+            foreach (var m in methods)
+            {
+                if (m.Name == "UseABullet")
+                    yield return m;
+            }
+        }
+
         [HarmonyPrefix]
-        static bool Prefix(ItemSetting_Gun __instance)
+        static void Prefix(ItemSetting_Gun __instance)
         {
             try
             {
-                if (__instance == null) return true;
+                if (__instance == null) return;
                 var manager = TalentManager.Instance;
-                if (manager == null) return true;
+                if (manager == null) return;
 
-                // EMA: 차징 중에는 게임의 자동 발사 차단
-                if (manager.GetEquippedTalentId() == "electromagnetic_accelerator")
-                {
-                    // 우리가 직접 호출한 발사면 통과
-                    if (manager.IsEMAManualFire())
-                    {
-                        return true;
-                    }
-                    // 트리거 누르고 있는 동안엔 발사 막기
-                    if (manager.IsEMAHoldingTrigger())
-                    {
-                        return false; // 게임 발사 취소
-                    }
-                    // 그 외 (트리거 안 누름) - 게임 발사 막기 (EMA는 release 시에만 발사)
-                    return false;
-                }
-
-                // Actum Est가 활성화되어 있으면 매 발사마다 전기 속성 보장
                 if (manager.GetEquippedTalentId() == "actum_est" && manager.IsActumEstActive())
                 {
                     ElectricAmmoApplier.ApplyElectric(__instance);
                 }
                 else
                 {
-                    // 활성화 아니면 원본 복원
                     ElectricAmmoApplier.RemoveElectric(__instance);
                 }
-
-                return true; // 일반 발사 진행
             }
-            catch
-            {
-                return true;
-            }
+            catch { }
         }
     }
 }
