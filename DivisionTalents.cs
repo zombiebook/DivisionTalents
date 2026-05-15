@@ -202,7 +202,7 @@ namespace DivisionTalents
             {
                 Id = "close_and_personal",
                 Name = "Close & Personal",
-                Description = "근거리 킬: 5초간 +50% 데미지",
+                Description = L("근거리 킬: 5초간 +50% 데미지", "Close kill: +50% DMG for 5s", "近距離キル: 5秒間+50%ダメージ"),
                 Type = TalentType.Offensive,
                 IsPassive = false,
                 Duration = 5f,
@@ -214,7 +214,7 @@ namespace DivisionTalents
             {
                 Id = "frenzy",
                 Name = "Frenzy",
-                Description = "빈 탄창 재장전: 7초간 +20% 데미지, +35% 연사력",
+                Description = L("빈 탄창 재장전: 7초간 +20% 데미지, +35% 연사력", "Empty reload: +20% DMG, +35% RPM for 7s", "空マガジンリロード: 7秒間+20%ダメージ, +35%連射"),
                 Type = TalentType.Offensive,
                 IsPassive = false,
                 Duration = 7f,
@@ -226,7 +226,7 @@ namespace DivisionTalents
             {
                 Id = "ranger",
                 Name = "Ranger",
-                Description = "거리 데미지: 5m당 +2% (최대 +40%)",
+                Description = L("거리 데미지: 5m당 +2% (최대 +40%)", "Distance DMG: +2% per 5m (max +40%)", "距離ダメージ: 5mごとに+2% (最大+40%)"),
                 Type = TalentType.Offensive,
                 IsPassive = true,
                 IsActive = true,
@@ -237,7 +237,7 @@ namespace DivisionTalents
             {
                 Id = "optimist",
                 Name = "Optimist",
-                Description = "탄창이 비워질수록 데미지 증가 (최대 +25%)",
+                Description = L("탄창이 비워질수록 데미지 증가 (최대 +25%)", "More DMG as mag empties (max +25%)", "マガジンが空になるほどダメージ増加 (最大+25%)"),
                 Type = TalentType.Offensive,
                 IsPassive = true,
                 IsActive = true,
@@ -248,7 +248,7 @@ namespace DivisionTalents
             {
                 Id = "strained",
                 Name = "Strained",
-                Description = "체력 5% 잃을 때마다 +10% 크리티컬 데미지",
+                Description = L("체력 5% 잃을 때마다 +10% 크리티컬 데미지", "+10% crit DMG per 5% HP lost", "体力5%減少ごとに+10%クリティカルダメージ"),
                 Type = TalentType.Offensive,
                 IsPassive = true,
                 IsActive = true,
@@ -260,7 +260,7 @@ namespace DivisionTalents
             {
                 Id = "preservation",
                 Name = "Preservation",
-                Description = "킬: 3초간 체력 5% 회복",
+                Description = L("킬: 3초간 체력 5% 회복", "Kill: Heal 5% HP over 3s", "キル: 3秒間体力5%回復"),
                 Type = TalentType.Defensive,
                 IsPassive = false,
                 Duration = 3f,
@@ -272,7 +272,7 @@ namespace DivisionTalents
             {
                 Id = "reformation",
                 Name = "Reformation",
-                Description = "헤드샷 킬: 체력 5% 즉시 회복",
+                Description = L("헤드샷 킬: 체력 5% 즉시 회복", "Headshot kill: Instant 5% HP", "ヘッドショットキル: 即座に体力5%回復"),
                 Type = TalentType.Defensive,
                 IsPassive = false,
                 Duration = 0f,
@@ -284,7 +284,7 @@ namespace DivisionTalents
             {
                 Id = "vindictive",
                 Name = "Vindictive",
-                Description = "킬: 5초간 +20% 크리티컬 확률",
+                Description = L("킬: 5초간 +20% 크리티컬 확률", "Kill: +20% crit chance for 5s", "キル: 5秒間+20%クリティカル率"),
                 Type = TalentType.Defensive,
                 IsPassive = false,
                 Duration = 5f,
@@ -297,7 +297,7 @@ namespace DivisionTalents
             {
                 Id = "fast_hands",
                 Name = "Fast Hands",
-                Description = "크리티컬: 재장전 속도 -1% (최대 30스택)",
+                Description = L("크리티컬: 재장전 속도 -1% (최대 30스택)", "Crit: -1% reload time (max 30 stacks)", "クリティカル: リロード速度-1% (最大30スタック)"),
                 Type = TalentType.Utility,
                 IsPassive = false,
                 Duration = 5f,
@@ -309,7 +309,7 @@ namespace DivisionTalents
             {
                 Id = "measured",
                 Name = "Measured",
-                Description = "탄창 상단 +15% 연사력, 하단 +20% 데미지",
+                Description = L("탄창 상단 +15% 연사력, 하단 +20% 데미지", "Top half: +15% RPM, Bottom: +20% DMG", "マガジン上半分+15%連射, 下半分+20%ダメージ"),
                 Type = TalentType.Utility,
                 IsPassive = true,
                 IsActive = true,
@@ -320,7 +320,7 @@ namespace DivisionTalents
             {
                 Id = "allegro",
                 Name = "Allegro",
-                Description = "+10% 연사력 (항상 적용)",
+                Description = L("+10% 연사력 (항상 적용)", "+10% fire rate (passive)", "+10%連射速度 (パッシブ)"),
                 Type = TalentType.Utility,
                 IsPassive = true,
                 IsActive = true,
@@ -331,7 +331,7 @@ namespace DivisionTalents
             {
                 Id = "extra",
                 Name = "Extra",
-                Description = "+50% 탄창 용량 (항상 적용)",
+                Description = L("+50% 탄창 용량 (항상 적용)", "+50% magazine capacity (passive)", "+50%マガジン容量 (パッシブ)"),
                 Type = TalentType.Utility,
                 IsPassive = true,
                 IsActive = true,
@@ -342,7 +342,7 @@ namespace DivisionTalents
             {
                 Id = "electromagnetic_accelerator",
                 Name = "Electromagnetic Accelerator",
-                Description = "조준(우클릭) 중 +50% 데미지",
+                Description = L("조준(우클릭) 중 +50% 데미지", "ADS (right click): +50% DMG", "エイム(右クリック)中+50%ダメージ"),
                 Type = TalentType.Utility,
                 IsPassive = true,
                 IsActive = true,
@@ -356,7 +356,7 @@ namespace DivisionTalents
             {
                 Id = "boomerang",
                 Name = "Boomerang",
-                Description = "크리티컬 시 탄환 1발 복구 + 5초간 +50% 데미지",
+                Description = L("크리티컬 시 탄환 1발 복구 + 5초간 +50% 데미지", "Crit: Return 1 bullet + +50% DMG for 5s", "クリティカル: 弾丸1発回復 + 5秒間+50%ダメージ"),
                 Type = TalentType.Offensive,
                 IsPassive = false,
                 Duration = 5f,
@@ -368,7 +368,7 @@ namespace DivisionTalents
             {
                 Id = "outsider_edge",
                 Name = "Outsider Edge",
-                Description = "헤드샷 시 +25% 데미지 (4초)",
+                Description = L("헤드샷 시 +25% 데미지 (4초)", "Headshot: +25% DMG for 4s", "ヘッドショット: 4秒間+25%ダメージ"),
                 Type = TalentType.Offensive,
                 IsPassive = false,
                 Duration = 4f,
@@ -380,7 +380,7 @@ namespace DivisionTalents
             {
                 Id = "killer",
                 Name = "Killer",
-                Description = "킬: +50% 크리티컬 데미지 (5초)",
+                Description = L("킬: +50% 크리티컬 데미지 (5초)", "Kill: +50% crit DMG for 5s", "キル: 5秒間+50%クリティカルダメージ"),
                 Type = TalentType.Offensive,
                 IsPassive = false,
                 Duration = 5f,
@@ -392,10 +392,10 @@ namespace DivisionTalents
             {
                 Id = "first_blood",
                 Name = "First Blood",
-                Description = "첫 사격 +30% 데미지 (재장전 후 리셋)",
+                Description = L("첫 사격 +30% 데미지 (재장전 후 리셋)", "First shot +30% DMG (resets on reload)", "初弾+30%ダメージ (リロードでリセット)"),
                 Type = TalentType.Offensive,
                 IsPassive = false,
-                Duration = 60f, // 길게, 재장전 시 해제
+                Duration = 60f,
                 Cooldown = 0f,
                 Stats = { { "damage_bonus", 0.3f } }
             });
@@ -405,7 +405,7 @@ namespace DivisionTalents
             {
                 Id = "stable",
                 Name = "Stable",
-                Description = "반동 제어 +30% (항상 적용)",
+                Description = L("반동 제어 +30% (항상 적용)", "+30% recoil control (passive)", "+30%反動制御 (パッシブ)"),
                 Type = TalentType.Defensive,
                 IsPassive = true,
                 IsActive = true,
@@ -416,7 +416,7 @@ namespace DivisionTalents
             {
                 Id = "perpetuation",
                 Name = "Perpetuation",
-                Description = "헤드샷 킬: +25% 다음 데미지 (3초)",
+                Description = L("헤드샷 킬: +25% 다음 데미지 (3초)", "Headshot kill: +25% DMG for 3s", "ヘッドショットキル: 3秒間+25%ダメージ"),
                 Type = TalentType.Defensive,
                 IsPassive = false,
                 Duration = 3f,
@@ -428,7 +428,7 @@ namespace DivisionTalents
             {
                 Id = "septic_shock",
                 Name = "Septic Shock",
-                Description = "같은 적 명중 시 10초간 맹독 중첩. 7중첩 시 +20% 데미지",
+                Description = L("같은 적 명중 시 중첩. 3중첩 스턴, 6중첩 쇼크, 7중첩 +20% 데미지", "Hit same enemy: 3=stun, 6=shock, 7=+20% DMG", "同じ敵に命中で重複. 3スタン, 6ショック, 7で+20%ダメージ"),
                 Type = TalentType.Defensive,
                 IsPassive = true,
                 IsActive = true,
@@ -439,7 +439,7 @@ namespace DivisionTalents
             {
                 Id = "quickstep",
                 Name = "Quickstep",
-                Description = "이동 속도 +20% (항상 적용)",
+                Description = L("이동 속도 +20% (항상 적용)", "+20% movement speed (passive)", "+20%移動速度 (パッシブ)"),
                 Type = TalentType.Defensive,
                 IsPassive = true,
                 IsActive = true,
@@ -451,10 +451,10 @@ namespace DivisionTalents
             {
                 Id = "actum_est",
                 Name = "Actum Est",
-                Description = "명중 시 1스택. 100스택에서 다음 탄창 전체 +25% 데미지 (쇼크탄)",
+                Description = L("100발 명중 후 다음 탄창 +25% 데미지 + 전기탄", "100 hits: next mag +25% DMG + shock ammo", "100発命中後、次のマガジン+25%ダメージ+電撃弾"),
                 Type = TalentType.Utility,
                 IsPassive = false,
-                Duration = 999f, // 다음 재장전까지
+                Duration = 999f,
                 Cooldown = 0f,
                 Stats = {
                     { "damage_bonus", 0.25f },
@@ -466,6 +466,17 @@ namespace DivisionTalents
         }
 
         private void AddTalent(WeaponTalent talent) => _talents[talent.Id] = talent;
+
+        /// <summary>
+        /// 시스템 언어에 따라 한국어/영어/일본어 텍스트 반환
+        /// </summary>
+        private static string L(string korean, string english, string japanese)
+        {
+            var lang = Application.systemLanguage;
+            if (lang == SystemLanguage.Japanese) return japanese;
+            if (lang == SystemLanguage.Korean) return korean;
+            return english;
+        }
 
         public WeaponTalent? GetTalent(string id) => _talents.TryGetValue(id, out var t) ? t : null;
         public IEnumerable<WeaponTalent> GetAllTalents() => _talents.Values;
@@ -1849,22 +1860,22 @@ namespace DivisionTalents
 
             string equippedName = _equippedTalentId != null && _talents.ContainsKey(_equippedTalentId)
                 ? _talents[_equippedTalentId].Name
-                : "없음";
-            GUILayout.Label($"장착됨: {equippedName}", _labelStyle);
+                : L("없음", "None", "なし");
+            GUILayout.Label($"{L("장착됨", "Equipped", "装備中")}: {equippedName}", _labelStyle);
             GUILayout.Space(5);
-            GUILayout.Label("T: 닫기  |  F9: 디버그  |  F10: 아이콘 토글", _labelStyle);
+            GUILayout.Label($"T: {L("닫기", "Close", "閉じる")}  |  F9: {L("디버그", "Debug", "デバッグ")}  |  F10: {L("아이콘 토글", "Icon Toggle", "アイコン切替")}", _labelStyle);
             GUILayout.Space(10);
 
             _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, GUILayout.Height(550));
 
-            DrawTalentCategory("⚔ 공격형 (Offensive)", TalentType.Offensive);
-            DrawTalentCategory("🛡 방어형 (Defensive)", TalentType.Defensive);
-            DrawTalentCategory("⚙ 유틸리티 (Utility)", TalentType.Utility);
+            DrawTalentCategory(L("⚔ 공격형 (Offensive)", "⚔ Offensive", "⚔ 攻撃型"), TalentType.Offensive);
+            DrawTalentCategory(L("🛡 방어형 (Defensive)", "🛡 Defensive", "🛡 防御型"), TalentType.Defensive);
+            DrawTalentCategory(L("⚙ 유틸리티 (Utility)", "⚙ Utility", "⚙ ユーティリティ"), TalentType.Utility);
 
             GUILayout.EndScrollView();
 
             GUILayout.Space(10);
-            if (GUILayout.Button("탤런트 해제 (Unequip)", _buttonStyle, GUILayout.Height(35)))
+            if (GUILayout.Button(L("탤런트 해제", "Unequip", "タレント解除"), _buttonStyle, GUILayout.Height(35)))
             {
                 _equippedTalentId = null;
                 Debug.Log("[DivisionTalents] 탤런트 해제됨");
