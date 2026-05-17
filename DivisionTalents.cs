@@ -2334,6 +2334,26 @@ namespace DivisionTalents
                         isPlayerAttacker = true;
                     }
                 }
+                if (!isPlayerAttacker)
+                {
+                    // 맵 이동 후 인스턴스가 바뀔 수 있으므로 Health 컴포넌트로도 비교
+                    if (attacker is Component atkComp)
+                    {
+                        var atkHealth = atkComp.GetComponent<Health>();
+                        if (atkHealth != null && player.Health != null && atkHealth == player.Health)
+                        {
+                            isPlayerAttacker = true;
+                        }
+                    }
+                    // fromCharacter가 Health 타입인 경우
+                    if (!isPlayerAttacker && attacker is Health atkAsHealth)
+                    {
+                        if (player.Health != null && atkAsHealth == player.Health)
+                        {
+                            isPlayerAttacker = true;
+                        }
+                    }
+                }
 
                 if (!isPlayerAttacker) return;
 
