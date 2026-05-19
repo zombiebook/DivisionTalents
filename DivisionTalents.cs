@@ -468,14 +468,61 @@ namespace DivisionTalents
         private void AddTalent(WeaponTalent talent) => _talents[talent.Id] = talent;
 
         /// <summary>
-        /// 시스템 언어에 따라 한국어/영어/일본어 텍스트 반환
+        /// 시스템 언어에 따라 한국어/영어/일본어/러시아어 텍스트 반환
+        /// 러시아어는 영어 키를 기반으로 사전에서 번역을 찾음
         /// </summary>
+        private static Dictionary<string, string>? _russianDict;
+
         private static string L(string korean, string english, string japanese)
         {
             var lang = Application.systemLanguage;
             if (lang == SystemLanguage.Japanese) return japanese;
             if (lang == SystemLanguage.Korean) return korean;
+            if (lang == SystemLanguage.Russian)
+            {
+                if (_russianDict == null) InitRussianDict();
+                if (_russianDict!.TryGetValue(english, out var ru)) return ru;
+                return english; // 번역 없으면 영어
+            }
             return english;
+        }
+
+        private static void InitRussianDict()
+        {
+            _russianDict = new Dictionary<string, string>
+            {
+                // 탤런트 설명
+                ["Close kill: +50% DMG for 5s"] = "Убийство вблизи: +50% урона на 5с",
+                ["Empty reload: +20% DMG, +35% RPM for 7s"] = "Перезарядка пустого: +20% урона, +35% скорострельности на 7с",
+                ["Distance DMG: +2% per 5m (max +40%)"] = "Урон по дистанции: +2% за 5м (макс +40%)",
+                ["More DMG as mag empties (max +25%)"] = "Больше урона при опустошении магазина (макс +25%)",
+                ["+10% crit DMG per 5% HP lost"] = "+10% крит. урона за каждые 5% потерянного HP",
+                ["Kill: Heal 5% HP over 3s"] = "Убийство: восстановление 5% HP за 3с",
+                ["Headshot kill: Instant 5% HP"] = "Убийство в голову: мгновенно 5% HP",
+                ["Kill: +20% crit chance for 5s"] = "Убийство: +20% шанс крита на 5с",
+                ["Crit: -1% reload time (max 30 stacks)"] = "Крит: -1% время перезарядки (макс 30 стаков)",
+                ["Top half: +15% RPM, Bottom: +20% DMG"] = "Верх: +15% скорострельность, Низ: +20% урон",
+                ["+10% fire rate (passive)"] = "+10% скорострельность (пассивно)",
+                ["+50% magazine capacity (passive)"] = "+50% ёмкость магазина (пассивно)",
+                ["ADS (right click): +50% DMG"] = "Прицеливание (ПКМ): +50% урона",
+                ["Crit: Return 1 bullet + +50% DMG for 5s"] = "Крит: возврат 1 пули + +50% урона на 5с",
+                ["Headshot: +25% DMG for 4s"] = "Хедшот: +25% урона на 4с",
+                ["Kill: +50% crit DMG for 5s"] = "Убийство: +50% крит. урона на 5с",
+                ["First shot +30% DMG (resets on reload)"] = "Первый выстрел +30% урона (сброс при перезарядке)",
+                ["+30% recoil control (passive)"] = "+30% контроль отдачи (пассивно)",
+                ["Headshot kill: +25% DMG for 3s"] = "Убийство в голову: +25% урона на 3с",
+                ["Hit same enemy: 3=stun, 6=shock, 7=+20% DMG"] = "Попадание по одному врагу: 3=оглушение, 6=шок, 7=+20% урона",
+                ["+20% movement speed (passive)"] = "+20% скорость движения (пассивно)",
+                ["100 hits: next mag +25% DMG + shock ammo"] = "100 попаданий: след. магазин +25% урона + электро",
+
+                // UI
+                ["None"] = "Нет",
+                ["Equipped"] = "Экипировано",
+                ["Unequip"] = "Снять",
+                ["Offensive"] = "Атака",
+                ["Defensive"] = "Защита",
+                ["Utility"] = "Утилита",
+            };
         }
 
         public WeaponTalent? GetTalent(string id) => _talents.TryGetValue(id, out var t) ? t : null;
