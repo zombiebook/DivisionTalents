@@ -41,7 +41,7 @@ namespace DivisionTalents
                 Debug.Log($"[DivisionTalents] ★ Harmony patches applied: {patchedMethods.Count()} methods ★");
 
                 Debug.Log("[DivisionTalents] ★ Mod initialized successfully! ★");
-                Debug.Log("[DivisionTalents] Press T to open talent selector");
+                Debug.Log("[DivisionTalents] Press ` (BackQuote) to open talent selector");
             }
             catch (Exception ex)
             {
@@ -468,16 +468,23 @@ namespace DivisionTalents
         private void AddTalent(WeaponTalent talent) => _talents[talent.Id] = talent;
 
         /// <summary>
-        /// 시스템 언어에 따라 한국어/영어/일본어/러시아어 텍스트 반환
-        /// 러시아어는 영어 키를 기반으로 사전에서 번역을 찾음
+        /// 시스템 언어에 따라 한국어/영어/일본어/러시아어/중국어 텍스트 반환
+        /// 러시아어와 중국어는 영어 키를 기반으로 사전에서 번역을 찾음
         /// </summary>
         private static Dictionary<string, string>? _russianDict;
+        private static Dictionary<string, string>? _chineseDict;
 
         private static string L(string korean, string english, string japanese)
         {
             var lang = Application.systemLanguage;
             if (lang == SystemLanguage.Japanese) return japanese;
             if (lang == SystemLanguage.Korean) return korean;
+            if (lang == SystemLanguage.Chinese || lang == SystemLanguage.ChineseSimplified || lang == SystemLanguage.ChineseTraditional)
+            {
+                if (_chineseDict == null) InitChineseDict();
+                if (_chineseDict!.TryGetValue(english, out var cn)) return cn;
+                return english; // 번역 없으면 영어
+            }
             if (lang == SystemLanguage.Russian)
             {
                 if (_russianDict == null) InitRussianDict();
@@ -522,6 +529,44 @@ namespace DivisionTalents
                 ["Offensive"] = "Атака",
                 ["Defensive"] = "Защита",
                 ["Utility"] = "Утилита",
+            };
+        }
+
+        private static void InitChineseDict()
+        {
+            _chineseDict = new Dictionary<string, string>
+            {
+                // 天赋说明 (简体中文)
+                ["Close kill: +50% DMG for 5s"] = "近距离击杀: 5秒内+50%伤害",
+                ["Empty reload: +20% DMG, +35% RPM for 7s"] = "空弹夹装填: 7秒内+20%伤害, +35%射速",
+                ["Distance DMG: +2% per 5m (max +40%)"] = "距离伤害: 每5米+2% (最多+40%)",
+                ["More DMG as mag empties (max +25%)"] = "弹夹越空伤害越高 (最多+25%)",
+                ["+10% crit DMG per 5% HP lost"] = "每损失5%生命值, +10%暴击伤害",
+                ["Kill: Heal 5% HP over 3s"] = "击杀: 3秒内恢复5%生命值",
+                ["Headshot kill: Instant 5% HP"] = "爆头击杀: 立即恢复5%生命值",
+                ["Kill: +20% crit chance for 5s"] = "击杀: 5秒内+20%暴击率",
+                ["Crit: -1% reload time (max 30 stacks)"] = "暴击: -1%装填时间 (最多30层)",
+                ["Top half: +15% RPM, Bottom: +20% DMG"] = "上半弹夹: +15%射速, 下半弹夹: +20%伤害",
+                ["+10% fire rate (passive)"] = "+10%射速 (被动)",
+                ["+50% magazine capacity (passive)"] = "+50%弹夹容量 (被动)",
+                ["ADS (right click): +50% DMG"] = "瞄准(右键): +50%伤害",
+                ["Crit: Return 1 bullet + +50% DMG for 5s"] = "暴击: 返还1发子弹 + 5秒内+50%伤害",
+                ["Headshot: +25% DMG for 4s"] = "爆头: 4秒内+25%伤害",
+                ["Kill: +50% crit DMG for 5s"] = "击杀: 5秒内+50%暴击伤害",
+                ["First shot +30% DMG (resets on reload)"] = "首发+30%伤害 (装填后重置)",
+                ["+30% recoil control (passive)"] = "+30%后坐力控制 (被动)",
+                ["Headshot kill: +25% DMG for 3s"] = "爆头击杀: 3秒内+25%伤害",
+                ["Hit same enemy: 3=stun, 6=shock, 7=+20% DMG"] = "连续命中同一敌人: 3层眩晕, 6层电击, 7层+20%伤害",
+                ["+20% movement speed (passive)"] = "+20%移动速度 (被动)",
+                ["100 hits: next mag +25% DMG + shock ammo"] = "100次命中后: 下一弹夹+25%伤害 + 电击弹药",
+
+                // UI
+                ["None"] = "无",
+                ["Equipped"] = "已装备",
+                ["Unequip"] = "卸下",
+                ["Offensive"] = "进攻",
+                ["Defensive"] = "防御",
+                ["Utility"] = "实用",
             };
         }
 
@@ -681,7 +726,7 @@ namespace DivisionTalents
             }
 
             // 단축키
-            if (Input.GetKeyDown(KeyCode.T))
+            if (Input.GetKeyDown(KeyCode.BackQuote))
             {
                 _showTalentSelector = !_showTalentSelector;
             }
